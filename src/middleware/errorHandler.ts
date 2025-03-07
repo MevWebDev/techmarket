@@ -6,11 +6,10 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error("Error:", err.message); // Log the error
+  console.error("Error:", err.message);
 
   // Send a generic error response
   res.status(500).json({
-    message: "Something went wrong on the server.",
-    error: err.message,
+    message: err.message || "Internal server error",
   });
 };
