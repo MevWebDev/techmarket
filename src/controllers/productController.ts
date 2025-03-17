@@ -1,7 +1,7 @@
 // src/controllers/productController.js
-import { QueryParams } from "../config/db";
 import * as productModel from "../models/productModel";
 import { Request, Response } from "express";
+import { QueryParams } from "../models/productModel";
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
@@ -33,7 +33,7 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { sortBy, sortOrder, isAvailable, limit, offset } = req.query;
+    const { sortBy, sortOrder, isAvailable } = req.query;
 
     // Parse query parameters
     const params: QueryParams = {

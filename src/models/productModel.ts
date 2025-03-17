@@ -1,11 +1,19 @@
 // src/models/productModel.js
-import { query, QueryParams } from "../config/db";
-import { Product } from "../data/products";
+import prisma from "../config/db";
+import { Prisma, Product } from "@prisma/client";
 
-export const createProduct = async (product: Product) => {
+export interface QueryParams {
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  isAvailable?: boolean;
+}
+
+export const createProduct = async (
+  product: Omit<Product, "id" | "createdAt" | "updatedAt">
+) => {
   const {
     name,
-    category,
+    categoryId,
     description,
     price,
     stockCount,
@@ -13,102 +21,129 @@ export const createProduct = async (product: Product) => {
     imageUrl,
     isAvailable,
   } = product;
-  const result = await query(
-    "INSERT INTO products (name, category, description, price, stock_count, brand, image_url, is_available) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
-    [
-      name,
-      category,
-      description,
-      price,
-      stockCount,
-      brand,
-      imageUrl,
-      isAvailable,
-    ]
-  );
-  return result.rows[0];
+
+  // Prepare basic product data
+  const data: Prisma.ProductCreateInput = {
+    name,
+    description,
+    price,
+    stockCount,
+    brand,
+    imageUrl,
+    isAvailable,
+    category: undefined as any,
+  };
+
+  // Handle category connection
+  if (categoryId) {
+    // Connect to existing category if categoryId is provided
+    data.category = {
+      connect: { id: categoryId },
+    };
+  } else {
+    // Create or connect to default category if no categoryId
+    data.category = {
+      connectOrCreate: {
+        where: { name: "Uncategorized" },
+        create: {
+          name: "Uncategorized",
+          description: "Default category for products",
+        },
+      },
+    };
+  }
+
+  return await prisma.product.create({
+    data,
+    include: {
+      category: true,
+    },
+  });
 };
 
 export const getProductById = async (id: string) => {
-  const result = await query("SELECT * FROM products WHERE id = $1", [id]);
-  return result.rows[0];
+  const productId = parseInt(id);
+
+  if (isNaN(productId)) {
+    throw new Error("Invalid product ID format");
+  }
+  return await prisma.product.findUnique({
+    where: {
+      id: productId,
+    },
+    include: {
+      category: true,
+    },
+  });
 };
 
 export const getAllProducts = async (params: QueryParams = {}) => {
   const { sortBy, sortOrder, isAvailable } = params;
 
-  // Base query
-  let queryString = "SELECT * FROM products";
-  const queryParams: any[] = [];
-  let paramIndex = 1;
+  const where: Prisma.ProductWhereInput = {};
 
-  // Add filters
   if (isAvailable !== undefined) {
-    queryString += ` WHERE is_available = $${paramIndex}`;
-    queryParams.push(isAvailable);
-    paramIndex++;
+    where.isAvailable = isAvailable;
   }
 
-  // Add sorting
+  let orderBy: Prisma.ProductOrderByWithRelationInput | undefined;
+
   if (sortBy) {
-    const validSortFields = ["name", "price", "created_at"]; // Add valid fields here
+    const validSortFields = ["name", "price", "createdAt", "stockCount"];
     if (validSortFields.includes(sortBy)) {
-      queryString += ` ORDER BY ${sortBy} ${
-        sortOrder === "desc" ? "DESC" : "ASC"
-      }`;
+      orderBy = {
+        [sortBy]: sortOrder?.toLowerCase() === "desc" ? "desc" : "asc",
+      };
     } else {
-      throw new Error("Invalid sort field");
+      throw new Error(`Invalid sort field: ${sortBy}`);
     }
   }
-
-  const result = await query(queryString, queryParams);
-  return result.rows;
+  return await prisma.product.findMany({
+    where,
+    orderBy,
+    include: {
+      category: true,
+    },
+  });
 };
 
 export const updateProduct = async (id: string, product: Partial<Product>) => {
-  const {
-    name,
-    category,
-    description,
-    price,
-    stockCount,
-    brand,
-    imageUrl,
-    isAvailable,
-  } = product;
+  const productId = parseInt(id);
 
-  const result = await query(
-    `UPDATE products 
-         SET 
-           name = COALESCE($1, name),
-           category = COALESCE($2, category),
-           description = COALESCE($3, description),
-           price = COALESCE($4, price),
-           stock_count = COALESCE($5, stock_count),
-           brand = COALESCE($6, brand),
-           image_url = COALESCE($7, image_url),
-           is_available = COALESCE($8, is_available)
-         WHERE id = $9
-         RETURNING *`,
-    [
-      name,
-      category,
-      description,
-      price,
-      stockCount,
-      brand,
-      imageUrl,
-      isAvailable,
-      id,
-    ]
-  );
+  if (isNaN(productId)) {
+    throw new Error("Invalid product ID format");
+  }
 
-  return result.rows[0];
+  const updateData: Prisma.ProductUpdateInput = {
+    ...product,
+  };
+
+  if ("categoryId" in product) {
+    updateData.category = {
+      connect: { id: product.categoryId as number },
+    };
+  }
+
+  return await prisma.product.update({
+    where: { id: productId },
+    data: updateData,
+    include: { category: true },
+  });
 };
 
 export const deleteProduct = async (id: string) => {
-  const result = await query("DELETE FROM products WHERE id = $1 RETURNING *", [
-    id,
-  ]);
-  return result.rows[0];
+  const productId = parseInt(id);
+
+  if (isNaN(productId)) {
+    throw new Error("Invalid product ID format");
+  }
+
+  return await prisma.product.delete({
+    where: {
+      id: productId,
+    },
+    include: {
+      category: true,
+    },
+  });
 };
