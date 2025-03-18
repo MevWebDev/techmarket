@@ -60,6 +60,15 @@ export const getProducts = async (req: Request, res: Response) => {
   }
 };
 
+export const getProductsByCategory = async (req: Request, res: Response) => {
+  try {
+    const products = await productModel.getProductsByCategory(req.params.id);
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching products by category" });
+  }
+};
+
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const updatedProduct = await productModel.updateProduct(

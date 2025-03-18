@@ -77,6 +77,14 @@ export const getProductById = async (id: string) => {
   });
 };
 
+export const getProductsByCategory = async (id: string) => {
+  const categoryId = parseInt(id);
+  return await prisma.product.findMany({
+    where: { categoryId: categoryId },
+    include: { category: true },
+  });
+};
+
 export const getAllProducts = async (params: QueryParams = {}) => {
   const { sortBy, sortOrder, isAvailable } = params;
 
