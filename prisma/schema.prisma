@@ -50,7 +50,7 @@ model Review {
   product      Product   @relation(fields: [productId], references: [id])
   userId       Int       @map("user_id")
   user         User      @relation(fields: [userId], references: [id])
-  rating       Int
+  rating       Int       @default(5) @db.SmallInt
   comment      String
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
