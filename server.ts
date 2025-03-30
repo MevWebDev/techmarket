@@ -6,6 +6,7 @@ import productRoutes from "./src/routes/productRoutes";
 import categoryRoutes from "./src/routes/categoryRoutes";
 import userRoutes from "./src/routes/userRoutes";
 import reviewRoutes from "./src/routes/reviewRoutes";
+import cartRoutes from "./src/routes/cartRoutes";
 import { errorHandler } from "./src/middleware/errorHandler";
 import { requestLogger } from "./src/middleware/logger";
 
@@ -22,6 +23,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/cart", cartRoutes);
 
 app.use(errorHandler);
 
