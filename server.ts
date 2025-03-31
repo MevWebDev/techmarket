@@ -8,7 +8,8 @@ import userRoutes from "./src/routes/userRoutes";
 import reviewRoutes from "./src/routes/reviewRoutes";
 import cartRoutes from "./src/routes/cartRoutes";
 import { errorHandler } from "./src/middleware/errorHandler";
-import { requestLogger } from "./src/middleware/logger";
+
+import connectMongo from "./src/config/mongodb";
 
 dotenv.config();
 
@@ -27,6 +28,16 @@ app.use("/api/cart", cartRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await connectMongo();
+    app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();

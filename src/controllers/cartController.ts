@@ -97,20 +97,26 @@ export const addToCart = async (req: Request, res: Response) => {
 };
 
 // Update item quantity
-export const updateCartItem = async (req: Request, res: Response) => {
+// Fix for updateCartItem function in cartController.ts
+export const updateCartItem = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { userId, productId, quantity } = req.body;
 
     if (!userId || !productId || quantity === undefined) {
-      return void res
+      res
         .status(400)
         .json({ message: "userId, productId and quantity are required" });
+      return; // Add this return to prevent further execution
     }
 
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {
-      return void res.status(404).json({ message: "Cart not found" });
+      res.status(404).json({ message: "Cart not found" });
+      return; // Add this return to prevent further execution
     }
 
     const itemIndex = cart.items.findIndex(
@@ -119,6 +125,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
     if (itemIndex === -1) {
       res.status(404).json({ message: "Product not found in cart" });
+      return; // Add this return to prevent further execution
     }
 
     if (quantity <= 0) {
@@ -134,6 +141,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
     // Use fetchCartData instead of modifying req.params and calling getCart
     const cartData = await fetchCartData(userId);
     res.status(200).json(cartData);
+    // No return statement or other response after this
   } catch (error) {
     res.status(500).json({ message: `Error updating cart: ${error}` });
   }
